@@ -122,7 +122,7 @@ void loop() {
       gotoCenters();
     } else if (inputString.startsWith("rnd")) {
       randomize();
-    } else if (inputString.startsWith("?")) {
+    } else if (inputString.startsWith("?") || inputString.startsWith("help")) {
       Serial.println("rst");
       Serial.println("clo");
       Serial.println("clc");
@@ -131,6 +131,8 @@ void loop() {
       Serial.println("fb<num>");
       Serial.println("cntr");
       Serial.println("rnd");
+    } else if (inputString.startsWith("ver")) {
+      Serial.println("rr_runner v0.1");
     }
     inputString="";
     stringComplete = false;
