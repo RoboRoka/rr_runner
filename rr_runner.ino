@@ -2,6 +2,10 @@
 #include <Servo.h>
 #include <EEPROM.h>
 
+void printVersion() {
+  Serial.println("rr_runner v0.1");
+}
+
 const unsigned short idxLeft = 0;
 const unsigned short idxRight = 1;
 const unsigned short idxForward = 2;
@@ -85,6 +89,8 @@ void setup() {
   gotoCenters();
   slowMode = true;
 
+  printVersion();
+
   ledOff();
 }
 
@@ -132,7 +138,7 @@ void loop() {
       Serial.println("cntr");
       Serial.println("rnd");
     } else if (inputString.startsWith("ver")) {
-      Serial.println("rr_runner v0.1");
+      printVersion();
     }
     inputString="";
     stringComplete = false;
