@@ -2,26 +2,49 @@
 #include <Servo.h>
 #include <EEPROM.h>
 
+const bool demoDebug = false;
+
 typedef struct {
   long offset;
   char* command;
 } commandStruct;
 
 commandStruct demoSequence[] = {
-//  {100, "cntr"},
-//  {500, "rnd"},
-  {1500, "clc"},
-  {3500, "clo"},
+  {0, "cntr"},
+  {1000, "sw 60"},
+  {1500, "ud 60"},
+  {2000, "fb 140"},
+  {2500, "clc"},
+  {3000, "ud 100"},
+  {3500, "sw 120"},
+  {4000, "ud 90"},
+  {4500, "clo"},
+  {5000, "fb 80"},
+  {5500, "sw 90"},
+  {6000, "clc"},
+  {6500, "cntr"},
+  {7000, "sw 120"},
+  {7500, "ud 80"},
+  {8000, "fb 140"},
+  {8500, "clc"},
+  {9000, "ud 100"},
+  {9500, "sw 60"},
+  {10000, "ud 60"},
+  {10500, "clo"},
+  {11000, "fb 80"},
+  {11500, "cntr"},
+  {12000, "clc"},
+  {14000, "rnd"},
   {-1, "end"} // Must be present
 };
 
 const unsigned short cmdDelay = 25;
 
 // detach the servos after 3 seconds
-const unsigned long autoTurnOff = 3000;
+const unsigned long autoTurnOff = 1500;
 
 // start the demo program after this much time (ms)
-const unsigned long demoStartTimeout = 10000; // 120000;
+const unsigned long demoStartTimeout = 60000; // 120000;
 
 void printVersion() {
   Serial.println("rr_runner v0.1");
@@ -117,7 +140,7 @@ void setup() {
   servosAttached = true;
 
   slowMode = false;
-  gotoCenters();
+  gotoCenters(false);
   slowMode = true;
 
   printVersion();
@@ -162,7 +185,7 @@ void loop() {
     } else if (inputString.startsWith("sm")) {
       slowMode = !inputString.equals("smoff");
     } else if (inputString.startsWith("cntr")) {
-      gotoCenters();
+      gotoCenters(true);
     } else if (inputString.startsWith("rnd")) {
       randomize();
     } else if (inputString.startsWith("on")) {
@@ -186,9 +209,7 @@ void loop() {
     inputString="";
     stringComplete = false;
     ledOff();
-    if (commandFromSerial) {
-      lastCommandMillis = millis();
-    }
+    lastCommandMillis = millis();
   }
 
   // If we're in slow mode, there is stuff to do later on as well
@@ -230,22 +251,31 @@ void loop() {
     turnOff();
   }
 
-  if (currentMillis - lastCommandMillis > demoStartTimeout) {
-    if (!runningDemo) {
+  if (!runningDemo) {
+    if (currentMillis - lastCommandMillis > demoStartTimeout) {
       demoStartMillis = millis();
       runningDemo = true;
       commandFromSerial = false;
       nextStep = 0;
-    } else { // running the demo
-      if (demoSequence[nextStep].offset == -1) {
-        lastCommandMillis = millis();
-        runningDemo = false;
-      } else if (currentMillis - demoStartMillis > demoSequence[nextStep].offset) {
-        inputString = demoSequence[nextStep].command;
-        Serial.println(inputString);
-        stringComplete = true;
-        nextStep++;
+      if (demoDebug) {
+        Serial.println("demo start");
       }
+    }
+  } else {
+    if (demoSequence[nextStep].offset == -1) {
+      lastCommandMillis = millis();
+      runningDemo = false;
+      if (demoDebug) {
+        Serial.println("demo end");
+      }
+    } else if (currentMillis - demoStartMillis > demoSequence[nextStep].offset) {
+      inputString = demoSequence[nextStep].command;
+      if (demoDebug) {
+        Serial.print("demo step: ");
+        Serial.println(inputString);
+      }
+      stringComplete = true;
+      nextStep++;
     }
   }
 }
@@ -335,13 +365,13 @@ void dumpLimits() {
   Serial.print("clawClose: "); Serial.println(clawClose);
 }
 
-void gotoCenters() {
+void gotoCenters(bool reportStatus) {
   openClaw(false);
   swTo((minSwivel + maxSwivel) / 2, false);
   udTo((minUpDown + maxUpDown) / 2, false);
   fbTo((minFwdBack + maxFwdBack) / 2, false);
   delay(cmdDelay);
-  if (!runningDemo) {
+  if (!runningDemo && reportStatus) {
     Serial.println("ok cntr");
   }
 }
