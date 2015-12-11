@@ -66,6 +66,8 @@ const unsigned short swivelPin = 1;
 const unsigned short fwdbackPin = 2;
 const unsigned short updownPin = 3;
 
+const unsigned short ldrPin = A1;
+
 Servo clawServo;
 Servo swivelServo;
 Servo updownServo;
@@ -102,7 +104,10 @@ bool runningDemo = false;
 unsigned short nextStep = 0;
 
 unsigned long lastCommandMillis = 0;
+unsigned long lastStatusMillis = 0;
 unsigned long demoStartMillis = 0;
+
+int prevLightValue = 0;
 
 void setup() {
   ledOn();
@@ -148,6 +153,7 @@ void setup() {
   ledOff();
 
   lastCommandMillis = millis();
+  lastStatusMillis = millis();
 }
 
 void ledOn() {
@@ -252,14 +258,31 @@ void loop() {
   }
 
   if (!runningDemo) {
-    if (currentMillis - lastCommandMillis > demoStartTimeout) {
-      demoStartMillis = millis();
-      runningDemo = true;
-      commandFromSerial = false;
-      nextStep = 0;
-      if (demoDebug) {
-        Serial.println("demo start");
+//    if (currentMillis - lastCommandMillis > demoStartTimeout) {
+//      demoStartMillis = millis();
+//      runningDemo = true;
+//      commandFromSerial = false;
+//      nextStep = 0;
+//      if (demoDebug) {
+//        Serial.println("demo start");
+//      }
+//    }
+    if (currentMillis - lastStatusMillis > 1000) {
+      int val = analogRead(ldrPin);
+
+      // TODO: Calculate the light values, and start the demo mode if appropriate
+      if (val < prevLightValue / 2) {
+        demoStartMillis = millis();
+        runningDemo = true;
+        commandFromSerial = false;
+        nextStep = 0;
+        if (demoDebug) {
+          Serial.println("demo start");
+        }
       }
+
+      prevLightValue = val;
+      lastStatusMillis = millis();
     }
   } else {
     if (demoSequence[nextStep].offset == -1) {
